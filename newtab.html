@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>새 탭</title>
+    <link rel="icon" href="icons/icon_on_32.png" type="image/x-icon" />
+    <link rel="stylesheet" href="newtab.css" />
+  </head>
+  <body>
+    <div class="center-container">
+      <div class="content-container">
+        <h1 class="main-title">New Tab</h1>
+        <div class="search-container">
+          <input type="text" class="search-box" placeholder="Google 검색 또는 URL 입력" />
+          <button class="search-button">검색</button>
+        </div>
+        <div class="shortcuts-container" id="shortcuts">
+          <!-- 바로가기와 "바로가기 추가" 버튼은 JavaScript에서 동적으로 추가됩니다 -->
+        </div>
+      </div>
+    </div>
+
+    <form id="addShortcutForm" style="display: none">
+      <input type="url" id="shortcutUrl" placeholder="https://example.com" required />
+      <input type="text" id="shortcutName" placeholder="바로가기 이름 (선택사항)" />
+      <button type="submit">추가</button>
+      <button type="button" id="cancelAdd">취소</button>
+    </form>
+
+    <script src="newtab.js"></script>
+  </body>
+</html>
