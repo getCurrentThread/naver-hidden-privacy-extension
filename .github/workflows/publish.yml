@@ -1,0 +1,67 @@
+name: Auto Release and Publish Chrome Extension
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  auto_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version info
+        id: extract_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update manifest.json version
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ steps.extract_version.outputs.version }}"/' manifest.json
+
+      - name: Remove unnecessary files and folders
+        run: |
+          cat .gitignore | sed '/^#.*/ d' | sed '/^\s*$/ d' | sed 's/^/git rm -r /' | bash || true
+          rm -f .gitignore README.md LICENSE
+
+      - name: Create release zip file
+        run: |
+          zip -r v${{ steps.extract_version.outputs.version }}.zip . -x ".git/*"
+
+      - name: Generate release notes
+        id: generate_release_notes
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s" ${{ github.ref }})
+          else
+            COMMITS=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..${{ github.ref }})
+          fi
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "Release of version ${{ steps.extract_version.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "Changes in this Release:" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: v${{ steps.extract_version.outputs.version }}.zip
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          body: ${{ steps.generate_release_notes.outputs.RELEASE_NOTES }}
+
+      - name: Publish Chrome Extension
+        uses: mnao305/chrome-extension-upload@v4.0.1
+        with:
+          file-path: v${{ steps.extract_version.outputs.version }}.zip
+          extension-id: ${{ secrets.EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
