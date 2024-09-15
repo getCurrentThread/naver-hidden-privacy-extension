@@ -578,3 +578,10 @@ if (document.readyState === "loading") {
 } else {
   initializePrivacyManager();
 }
+
+chrome.tabs.onCreated.addListener(async (tab) => {
+  const { toggle } = await chrome.storage.local.get("toggle");
+  if (!toggle && tab.pendingUrl === "chrome://newtab/") {
+    chrome.tabs.update(tab.id, { url: "default_newtab.html" });
+  }
+});
